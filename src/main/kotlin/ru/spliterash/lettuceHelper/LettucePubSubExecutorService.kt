@@ -22,7 +22,7 @@ class LettucePubSubExecutorService(private val uri: RedisURI) :
         ) as CompletionStage<StatefulRedisModulesConnection<String, String>>
     }
 
-    override suspend fun <R> execute(block: StatefulRedisModulesConnection<String, String>.() -> R): R =
+    override suspend fun <R> execute(block: suspend StatefulRedisModulesConnection<String, String>.() -> R): R =
         pool.execute(block);
 
     override suspend fun shutdown() = pool.shutdown()

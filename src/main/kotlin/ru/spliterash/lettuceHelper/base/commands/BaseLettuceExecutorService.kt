@@ -23,7 +23,7 @@ class BaseLettuceExecutorService<T : StatefulConnection<*, *>>(
         pool = AsyncConnectionPoolSupport.createBoundedObjectPool({ factory() }, config, false)
     }
 
-    override suspend fun <R> execute(block: T.() -> R): R {
+    override suspend fun <R> execute(block: suspend T.() -> R): R {
         val connection = pool.acquire().await()
 
         return try {

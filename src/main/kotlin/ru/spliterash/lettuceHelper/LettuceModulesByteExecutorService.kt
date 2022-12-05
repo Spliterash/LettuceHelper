@@ -22,7 +22,7 @@ class LettuceModulesByteExecutorService(private val uri: RedisURI) :
         ) as CompletionStage<StatefulRedisModulesConnection<String, ByteArray>>
     }
 
-    override suspend fun <R> execute(block: StatefulRedisModulesConnection<String, ByteArray>.() -> R): R =
+    override suspend fun <R> execute(block: suspend StatefulRedisModulesConnection<String, ByteArray>.() -> R): R =
         pool.execute(block);
 
     override suspend fun shutdown() = pool.shutdown()

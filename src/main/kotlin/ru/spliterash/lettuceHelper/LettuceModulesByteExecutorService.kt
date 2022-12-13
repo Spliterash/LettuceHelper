@@ -3,6 +3,8 @@ package ru.spliterash.lettuceHelper
 import com.redis.lettucemod.RedisModulesClient
 import com.redis.lettucemod.api.StatefulRedisModulesConnection
 import io.lettuce.core.RedisURI
+import io.lettuce.core.codec.ByteArrayCodec
+import io.lettuce.core.codec.RedisCodec
 import io.lettuce.core.codec.StringCodec
 import ru.spliterash.lettuceHelper.base.commands.BaseLettuceExecutorService
 import ru.spliterash.lettuceHelper.base.commands.LettuceExecutorService
@@ -17,7 +19,7 @@ class LettuceModulesByteExecutorService(private val uri: RedisURI) :
     private val pool = BaseLettuceExecutorService {
         @Suppress("UNCHECKED_CAST")
         client.connectAsync(
-            StringCodec.UTF8,
+            RedisCodec.of(StringCodec.UTF8, ByteArrayCodec()),
             uri
         ) as CompletionStage<StatefulRedisModulesConnection<String, ByteArray>>
     }

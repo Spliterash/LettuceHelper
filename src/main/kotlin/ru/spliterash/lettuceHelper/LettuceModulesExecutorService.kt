@@ -9,9 +9,10 @@ import ru.spliterash.lettuceHelper.base.commands.LettuceExecutorService
 import java.util.concurrent.CompletionStage
 
 
-class LettuceModulesExecutorService(private val uri: RedisURI) :
-    LettuceExecutorService<StatefulRedisModulesConnection<String, String>> {
-    private val client: RedisModulesClient = RedisModulesClient.create(uri)
+class LettuceModulesExecutorService(
+    private val client: RedisModulesClient,
+    private val uri: RedisURI
+) : LettuceExecutorService<StatefulRedisModulesConnection<String, String>> {
 
 
     private val pool = BaseLettuceExecutorService {

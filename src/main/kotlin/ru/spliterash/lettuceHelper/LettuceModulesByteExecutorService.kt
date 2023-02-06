@@ -11,10 +11,10 @@ import ru.spliterash.lettuceHelper.base.commands.LettuceExecutorService
 import java.util.concurrent.CompletionStage
 
 
-class LettuceModulesByteExecutorService(private val uri: RedisURI) :
-    LettuceExecutorService<StatefulRedisModulesConnection<String, ByteArray>> {
-    private val client: RedisModulesClient = RedisModulesClient.create(uri)
-
+class LettuceModulesByteExecutorService(
+    private val client: RedisModulesClient,
+    private val uri: RedisURI
+) : LettuceExecutorService<StatefulRedisModulesConnection<String, ByteArray>> {
 
     private val pool = BaseLettuceExecutorService {
         @Suppress("UNCHECKED_CAST")

@@ -7,12 +7,11 @@ import io.lettuce.core.codec.RedisCodec
 import io.lettuce.core.codec.StringCodec
 import io.lettuce.core.pubsub.RedisPubSubAdapter
 import kotlinx.coroutines.future.await
-import ru.spliterash.lettuceHelper.base.pubsub.LettucePubSubscribe
 import ru.spliterash.lettuceHelper.base.pubsub.LettuceSubscribe
 import java.util.concurrent.TimeUnit
 
-class LettucePubSubscribeImpl(private val client: RedisClient, private val uri: RedisURI) : LettucePubSubscribe {
-    override suspend fun subscribe(channel: String, sub: (ByteArray) -> Unit): LettuceSubscribe {
+class LettucePubSubService(private val client: RedisClient, private val uri: RedisURI) {
+    suspend fun subscribe(channel: String, sub: (ByteArray) -> Unit): LettuceSubscribe {
         val connection = client.connectPubSubAsync(RedisCodec.of(StringCodec.UTF8, ByteArrayCodec()), uri)
             .toCompletableFuture()
             .orTimeout(5, TimeUnit.SECONDS)

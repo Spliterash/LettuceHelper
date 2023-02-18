@@ -3,6 +3,7 @@ package ru.spliterash.lettuceHelper.lock.impl
 import io.lettuce.core.ScriptOutputType
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
+import org.apache.logging.log4j.LogManager
 import ru.spliterash.lettuceHelper.LettuceModulesByteExecutorService
 import ru.spliterash.lettuceHelper.LettucePubSubService
 import ru.spliterash.lettuceHelper.base.pubsub.LettuceSubscribe
@@ -13,9 +14,13 @@ import ru.spliterash.lettuceHelper.lock.exceptions.UnlockSomeoneElseLockExceptio
 import java.util.*
 import kotlin.coroutines.resume
 
+// Удаляет ключ, если его значение соответствует хешу, иначе ничего не делает
 private const val ATOMIC_DELETE_SCRIPT =
     "if redis.call('get',KEYS[1])==ARGV[1]then redis.call('del',KEYS[1])return true else return false end"
 
+// Продлевает TTL на минуту, если ключ соответствует сохранённому
+private const val ATOMIC_TTL_SCRIPT =
+    "if redis.call('get',KEYS[1])==ARGV[1]then redis.call('expire',KEYS[1],60)return true else return false end"
 class LettuceDistributedLockService(
     private val startPath: String,
     private val executor: LettuceModulesByteExecutorService,
@@ -59,7 +64,33 @@ class LettuceDistributedLockService(
     private suspend fun tryLock(id: String, key: ByteArray): Boolean = executor.executeAsync {
         val path = lockPath(id)
 
-        setnx(path, key).await()
+        val locked = setnx(path, key).await()
+        if (locked)
+            expire(path, 60L).await()
+
+        locked
+    }
+
+    private fun startExtension(id: String, key: ByteArray): Job {
+        val path = lockPath(id)
+        return CoroutineScope(Dispatchers.IO).launch {
+            while (true) {
+                delay(30 * 1000)
+                val extended = executor.executeAsync {
+                    eval<Boolean>(
+                        ATOMIC_TTL_SCRIPT,
+                        ScriptOutputType.BOOLEAN,
+                        arrayOf(path),
+                        key
+                    ).await()
+                }
+
+                if (!extended) {
+                    log.warn("Failed to extend '$id' lock, because it has another sign")
+                    break
+                }
+            }
+        }
     }
 
     private suspend fun lock(id: String, key: ByteArray): Unit = coroutineScope {
@@ -153,6 +184,14 @@ class LettuceDistributedLockService(
         override suspend fun isLocked(id: String) =
             this@LettuceDistributedLockService.isLocked(id)
 
+        override fun startExtension(id: String, randomKey: ByteArray) =
+            this@LettuceDistributedLockService.startExtension(id, randomKey)
+
+
         override fun release(lock: LettuceDistributedLock) = destroyLock(lock)
+    }
+
+    companion object {
+        private val log = LogManager.getLogger(LettuceDistributedLockService::class)
     }
 }

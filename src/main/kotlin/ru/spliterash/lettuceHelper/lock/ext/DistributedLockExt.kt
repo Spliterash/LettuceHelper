@@ -1,7 +1,7 @@
 package ru.spliterash.lettuceHelper.lock.ext
 
 import ru.spliterash.lettuceHelper.lock.base.DistributedLock
-import ru.spliterash.lettuceHelper.lock.impl.LettuceDistributedLockService
+import ru.spliterash.lettuceHelper.lock.base.DistributedLockService
 
 suspend inline fun <T> DistributedLock.withLock(block: () -> T) {
     lock()
@@ -12,7 +12,7 @@ suspend inline fun <T> DistributedLock.withLock(block: () -> T) {
     }
 }
 
-suspend inline fun <T> LettuceDistributedLockService.withLock(id: String, block: () -> T) {
+suspend inline fun <T> DistributedLockService.withLock(id: String, block: () -> T) {
     val lock = this.createDistributedLock(id)
 
     try {
@@ -20,4 +20,9 @@ suspend inline fun <T> LettuceDistributedLockService.withLock(id: String, block:
     } finally {
         lock.release()
     }
+}
+
+suspend fun DistributedLock.unlockAndRelease() {
+    unlock()
+    release()
 }
